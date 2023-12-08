@@ -256,6 +256,52 @@ data:
   ...
 ```
 
+### Creating Certificate With Name Constraints
+
+Root or Intermediate CA certificates can have name constraints. Name constraints indicates a name space within which all subject names in subsequent certificates in a certification path MUST be located.
+Checkout https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.10 for more details on this.
+
+<div className="warning">
+
+⛔️ This feature is only enabled by adding it to the
+`--feature-gates` flag on the cert-manager controller and webhook components:
+
+```bash
+--feature-gates=useCertificateRequestNameConstraints=true
+```
+
+</div>
+
+To create a CA Certificate with name constraints use the following configuration:
+
+```yaml
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ca-cert-example
+spec:
+  secretName: example-ca-key-pair
+  isCA: true
+  issuerRef:
+    name: selfsigned
+    kind: ClusterIssuer
+  commonName: "example1.com"
+  dnsNames:
+  - example1.com
+  nameConstraints:
+    critical: true
+    permitted:
+      dnsDomains: ["example1.com", "example2.com"]
+      ipRanges: ["10.10.0.0/16"]
+      emailAddress: ["example@example.org"]
+    excluded:
+      ipRanges: ["10.10.0.0/24"]
+```
+
+Note that when used with cert-manager's built-in CA and SelfSigned Issuer, the SANs (DNS name, IP address, URI, and email address) are not checked with the certificate's own name constraints, and are not checked with any of name constraints contained in the chain of certificates the certificate belongs to. 
+
+The certificate may get issued successfully, but be rejected by clients during TLS handshakes.
+
 ## Issuance triggers
 
 <a id="renewal-reissuance"></a>
